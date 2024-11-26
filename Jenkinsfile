@@ -4,22 +4,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Kinnaruo/sast-demo-app', branch: 'master'
+                git url: 'https://github.com/Kinnaruo/sast-demo-app.git', branch: 'master'
             }
         }
         stage('Install Dependencies') {
             steps {
-                sh 'pip install bandit'
+                // Create a virtual environment and activate it
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install bandit
+                '''
             }
         }
         stage('SAST Analysis') {
             steps {
-                // Run Bandit for static analysis, outputting to an XML file
-                sh 'bandit -f xml -o bandit-output.xml -r . || true'
-
-                // Record and display the Bandit analysis results in Jenkins
+                // Use the virtual environment to run Bandit
+                sh '''
+                    . venv/bin/activate
+                    bandit -f xml -o bandit-output.xml -r . || true
+                '''
                 recordIssues tools: [bandit(pattern: 'bandit-output.xml')]
             }
         }
     }
 }
+            
