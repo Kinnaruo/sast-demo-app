@@ -1,32 +1,51 @@
 pipeline {
     agent any
-
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Kinnaruo/sast-demo-app.git', branch: 'master'
+                git branch: 'master',
+                    url: 'https://github.com/Kinnaruo/sast-demo-app',
+                    credentialsId: 'github-pat'
             }
         }
         stage('Install Dependencies') {
             steps {
-                // Create a virtual environment and activate it
                 sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install bandit
+                # Pastikan Python tersedia
+                python3 --version
+                
+                # Buat virtual environment
+                python3 -m venv venv
+
+                # Aktifkan virtual environment
+                . venv/bin/activate
+
+                # Instal Bandit
+                pip install bandit
                 '''
             }
         }
         stage('SAST Analysis') {
             steps {
-                // Use the virtual environment to run Bandit
                 sh '''
-                    . venv/bin/activate
-                    bandit -f xml -o bandit-output.xml -r . || true
+                # Aktifkan virtual environment
+                . venv/bin/activate
+
+                # Jalankan analisis Bandit
+                bandit -f xml -o bandit-output.xml -r . || true
                 '''
-                recordIssues tools: [bandit(pattern: 'bandit-output.xml')]
+
+                // Simpan hasil analisis
+                archiveArtifacts artifacts: 'bandit-output.xml', allowEmptyArchive: true
             }
         }
     }
+    post {
+        always {
+            sh '''
+            # Bersihkan virtual environment
+            rm -rf venv
+            '''
+        }
+    }
 }
-            
