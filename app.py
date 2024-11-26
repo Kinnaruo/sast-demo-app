@@ -1,5 +1,9 @@
 import subprocess
+import shlex
 
+def run_command(cmd):
+	safe_cmd=shlex.split(cmd)
+	subprocess.call(safe_cmd)
 def greet(name):
 	print(f'Hello,{name}!')
 def run_command(cmd):
